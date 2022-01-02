@@ -2,6 +2,7 @@
 
 /*this routine is guaranteed to be called before any of the other routines, 
 and can do whatever initialization is needed.  The memory to be managed is passed into this routine. */
+// what data structure do you wanna use to store the memory?
 void mem_init(unsigned char *my_memory, unsigned int my_mem_size){
     return 0;
 }
@@ -34,36 +35,38 @@ void print_stats(char *prefix) {
 	 mem_stats.largest_block_used);
 }
 
-
-int main(){
-    int main(int argc, char **argv)
+int main(int argc, char **argv)
 {
-  unsigned int global_mem_size = 1024 * 1024;
-  unsigned char *global_memory = malloc(global_mem_size);
+    unsigned int global_mem_size = 1024 * 1024;
+    unsigned char *global_memory = malloc(global_mem_size);
 
-  mem_init(global_memory, global_mem_size);
-  print_stats("init");
+    mem_init(global_memory, global_mem_size);
+    print_stats("init");
 
-  unsigned char *ptr_array[10];
-  unsigned int sizes[] = {50, 20, 20, 20, 50, 0};
+    unsigned char *ptr_array[10];
+    unsigned int sizes[] = {50, 20, 20, 20, 50, 0};
 
-  for (int i = 0; sizes[i] != 0; i++) {
-    char buf[1024];
-    ptr_array[i] = my_malloc(sizes[i]);
-    
-    sprintf(buf, "after iteration %d size %d", i, sizes[i]);
-    print_stats(buf);
-  }
+    for (int i = 0; sizes[i] != 0; i++)
+    {
+        char buf[1024];
+        ptr_array[i] = my_malloc(sizes[i]);
 
-  my_free(ptr_array[1]);  print_stats("after free #1");
+        sprintf(buf, "after iteration %d size %d", i, sizes[i]);
+        print_stats(buf);
+    }
 
-  my_free(ptr_array[3]);  print_stats("after free #3");
+    my_free(ptr_array[1]);
+    print_stats("after free #1");
 
-  my_free(ptr_array[2]);  print_stats("after free #2");
+    my_free(ptr_array[3]);
+    print_stats("after free #3");
 
-  my_free(ptr_array[0]);  print_stats("after free #0");
+    my_free(ptr_array[2]);
+    print_stats("after free #2");
 
-  my_free(ptr_array[4]);  print_stats("after free #4");
-}
+    my_free(ptr_array[0]);
+    print_stats("after free #0");
 
+    my_free(ptr_array[4]);
+    print_stats("after free #4");
 }
