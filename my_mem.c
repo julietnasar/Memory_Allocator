@@ -1,4 +1,31 @@
 # include <stdio.h>
+# include <math.h>
+
+
+/*----------------------------------------------------
+------------------- UTIL FUNCTIONS -------------------
+----------------------------------------------------*/
+
+// returns array of exponents with specified base
+// and exponent range
+int * getExpArr(float base, float expStart, float expEnd){
+    // instantiate 
+    int size = expEnd - expStart;
+    int [] expArr = [size];
+
+    // go through exponents & add to arr 
+    for(int i = expStart; i <= expEnd; i++){
+        expArr[expStart - i] = pow(base, i);
+    }
+    // arrays return pointers auto so don't need to specify pointer
+    return expArr;
+}
+
+
+
+/*----------------------------------------------------
+----------------------------------------------------*/
+
 
 /*this routine is guaranteed to be called before any of the other routines, 
 and can do whatever initialization is needed.  The memory to be managed is passed into this routine. */
@@ -6,6 +33,11 @@ and can do whatever initialization is needed.  The memory to be managed is passe
 void mem_init(unsigned char *my_memory, unsigned int my_mem_size){
     
     // create a stack with pointers to different sizes
+
+    // get array of sizes for our stacks
+    // base = 2.0, expStart = 2.0, expEnd = 12.0
+    int [] expArr = getExpArr(2.0, 2.0, 12.0); 
+
     return 0;
 }
 
