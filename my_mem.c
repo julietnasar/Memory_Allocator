@@ -1,5 +1,6 @@
-# include <math.h>
 # include <stdio.h>
+# include <math.h>
+
 
 
 /*----------------------------------------------------
@@ -13,13 +14,13 @@ int myPow(int base, int exp){
     }
     return ans;
 }
-
+/*
 int blankRoot(int blank, int num){
     for(int i = 0; i < blank; i++){
         num = sqrt(num);
     }
     return num;
-}
+}*/
 
 // returns array of exponents with specified base
 // and exponent range
@@ -31,7 +32,9 @@ int fillExp(int arr[], int base, int expStart, int expEnd){
     }
 }
 
-
+int fillPartitions(int arr[]){
+    
+}
 
 /*----------------------------------------------------
 ----------------------------------------------------*/
@@ -46,18 +49,16 @@ void mem_init(unsigned char *my_memory, unsigned int my_mem_size){
 
     // get array of sizes for our stacks
     // base = 2, expStart = 2, expEnd = 11
-
+    
     // vars for exponent arr
     int base = 2;
-    int expStart = 1;
-    int expEnd = 11;
+    int expStart = 0;
+    int expEnd = 15;
 
-    // size of arr 
-    // represents number of sections we will have
-    int numPartitions = expEnd - expStart;
+    
 
     // exponent arr
-    static int expArr[11];
+    static int expArr[16];
     // fill array
     fillExp(expArr, base, expStart, expEnd); 
 
@@ -78,8 +79,14 @@ void mem_init(unsigned char *my_memory, unsigned int my_mem_size){
     know that a memory chunk is empty if 'e' stored in that spot
    */
 
-    int sizePerPartition = blankRoot(numPartitions, my_mem_size);
+    // represents number of sections we will have
+    /*
+    int numPartitions = expEnd - expStart;
+
+    int sizePerPartition = my_mem_size/numPartitions;
+
     printf("%d", sizePerPartition);
+    */
 
 
 }
@@ -111,8 +118,6 @@ void print_stats(char *prefix) {
 	 mem_stats.largest_block_used);
 } 
 */
-
-
 
 
 int main(int argc, char **argv)
