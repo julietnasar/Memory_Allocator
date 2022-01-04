@@ -4,12 +4,14 @@
 and can do whatever initialization is needed.  The memory to be managed is passed into this routine. */
 // what data structure do you wanna use to store the memory?
 void mem_init(unsigned char *my_memory, unsigned int my_mem_size){
+    
+    // create a stack with pointers to different sizes
     return 0;
 }
 
 /* a function functionally equivalent to malloc() , but allocates it from the memory pool passed to mem_init() */
 void *my_malloc(unsigned size){
-    return 0
+    return 0;
 }
 
 /* a function equivalent to free() , but returns the memory to the pool passed to mem_init()*/
