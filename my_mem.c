@@ -1,3 +1,4 @@
+# include <math.h>
 # include <stdio.h>
 
 
@@ -11,6 +12,13 @@ int myPow(int base, int exp){
         ans = ans*base;
     }
     return ans;
+}
+
+int blankRoot(int blank, int num){
+    for(int i = 0; i < blank; i++){
+        num = sqrt(num);
+    }
+    return num;
 }
 
 // returns array of exponents with specified base
@@ -38,12 +46,41 @@ void mem_init(unsigned char *my_memory, unsigned int my_mem_size){
 
     // get array of sizes for our stacks
     // base = 2, expStart = 2, expEnd = 11
-    static int expArr[10];
-    fillExp(expArr, 2, 2, 11); 
 
-    /*for(int i = 0; i < 10; i++){
+    // vars for exponent arr
+    int base = 2;
+    int expStart = 1;
+    int expEnd = 11;
+
+    // size of arr 
+    // represents number of sections we will have
+    int numPartitions = expEnd - expStart;
+
+    // exponent arr
+    static int expArr[11];
+    // fill array
+    fillExp(expArr, base, expStart, expEnd); 
+
+
+    /*
+    for(int i = 0; i < 11; i++){
         printf("%d\n", expArr[i]);
-    }*/
+    }
+    */
+
+   /* 
+   strategy: have different stacks with different sizes memory chunks
+   when the user asks for a chunk of memory, find the size that is closest
+   to the memory size required, and allocate it
+
+   if there is no free memory for that size, allocate from another stack
+
+    know that a memory chunk is empty if 'e' stored in that spot
+   */
+
+    int sizePerPartition = blankRoot(numPartitions, my_mem_size);
+    printf("%d", sizePerPartition);
+
 
 }
 
