@@ -3,11 +3,6 @@
 # include <string.h>
 
 
-/*----------------------------------------------------
-------------------- UTIL FUNCTIONS -------------------
-----------------------------------------------------*/
-
-
 // structure for memory location blocks
 typedef struct blockType Block;
 struct blockType {
@@ -78,8 +73,39 @@ void mem_init(unsigned char *my_memory, unsigned int my_mem_size){
 //a function functionally equivalent to malloc() , but allocates it from the memory pool passed to mem_init() 
 void *my_malloc(unsigned size){
 
-    // set aside space to hold data of new block
 
+    // first try and find a free block within the linked list
+    Block *b = head;
+
+    while(b->next != NULL){
+
+        // if we found a free block that is a fit size-wise    
+        if(b->status == 'f' && b->size >= size){
+            // allocate this block
+            b->status = "a";
+
+            // get size difference    
+            int diff = b->size - size;
+
+            // if not exact fit 
+            if(diff > 0){
+                b->size -= diff; // subtract diff from b
+
+                // create new block to hold extra space & put in between b and b->next
+                int newBlockLoc = b->start_loc + b->size + 1;  
+                Block *newBlock = createBlock(newBlockLoc, diff, 'f', b, b->next);
+                b->next = newBlock;
+            }
+            // we allocated so we can return
+            return;
+
+        }
+    }
+
+    // if got here, we did not find an empty space big enough in the current 
+    // linked list, so we will try to add on to the end
+
+    // set aside space to hold data of new block
     int prevEndLoc = cur->start_loc + cur->size;
     int loc = prevEndLoc + 1;
 
@@ -89,7 +115,7 @@ void *my_malloc(unsigned size){
         return;
     }
 
-    // if within bounds creare new block
+    // if within bounds create new block
 
     // find the previous block
     Block *prev;
@@ -112,7 +138,68 @@ void *my_malloc(unsigned size){
 // a function equivalent to free() , but returns the memory to the pool passed to mem_init()
 void my_free(void *mem_pointer){
 
+    // go through ll starting with head to find the pointer
+    Block *target = head;
 
+    // while there is a next, go through linked list
+    while(target->next != NULL){
+        // if we found our target memory location, break
+        if(target->start_loc == mem_pointer){
+            break;
+        }
+        // otherwise continue the search
+        target = target->next;
+
+    }
+    
+    // if we found our target, and didn't just fall of the end of 
+    // the linked list
+    if(target->start_loc == mem_pointer){
+
+        // set target's status to free
+        target->status = 'f';
+
+        // find the last contiguously free block moving backwards
+        Block *prev = target;
+        while(prev->prev != NULL && prev->prev->status == 'f'){
+            prev = prev->prev;
+        }
+
+        // if we found contigous empty blocks, merge
+        if(prev->start_loc != target->start_loc){
+
+            // start this free block at the prev free block
+            target->start_loc = prev->start_loc;
+            target->size += prev->size; // add on to size
+
+            // if prev->prev isn't the head, delete it
+            if(prev->prev->start_loc != head->start_loc){
+                prev->prev->next = target;
+            }
+            // otherwise make target the head
+            else{
+                head = target;
+            }
+        }
+
+        // find the last contiguously free block moving forward
+        Block *next = target;
+        while(next->next != NULL && next->next->status == 'f'){
+            next = next->next;
+        }
+
+        // if we found contigous empty blocks, merge
+        if(next->start_loc != target->start_loc){
+
+            // add on next's size to target's size
+            target->size += next->size;
+            // delete next
+            target->next = next->next;
+
+        }
+
+        
+    }
 
 }
 /*
