@@ -1,105 +1,121 @@
 # include <stdio.h>
-# include <math.h>
-
+# include <stdlib.h>
+# include <string.h>
 
 
 /*----------------------------------------------------
 ------------------- UTIL FUNCTIONS -------------------
 ----------------------------------------------------*/
 
-int myPow(int base, int exp){
-    int ans = 1;
-    for(int i = 0; i < exp; i++){
-        ans = ans*base;
-    }
-    return ans;
+
+// structure for memory location blocks
+typedef struct blockType Block;
+struct blockType {
+    int start_loc;  // starting mem location of this memory block
+    int size;       // size in mem locations of this block
+    char status;    // 'a' for allocated 'f' for free
+    struct blockType *prev;    // pointer to previous Block
+    struct blockType *next;    // pointer to next block
+};
+
+// head of the linked list & the current node must be global
+Block *head;
+Block *cur;
+
+// function to create a Block
+Block *createBlock(int start_loc, int size, char status, Block *prev, Block *next){
+    
+    Block* newBlock;
+
+    newBlock = (Block *)malloc(sizeOf(newBlock));
+
+    newBlock->start_loc = start_loc;
+    newBlock->size = size;
+    newBlock->status = status;
+    newBlock->prev = prev;
+    newBlock->next = next;
+
+    return newBlock;
 }
-/*
-int blankRoot(int blank, int num){
-    for(int i = 0; i < blank; i++){
-        num = sqrt(num);
-    }
-    return num;
-}*/
 
-// returns array of exponents with specified base
-// and exponent range
-int fillExp(int arr[], int base, int expStart, int expEnd){
-    int size = expEnd - expStart;
-    // go through exponents & add to arr 
-    for(int i = 0; i <= size; i++){
-        arr[i] = myPow(base, expStart + i);
-    }
-}
-
-int fillPartitions(int arr[]){
-    return 0;
-}
-
-/*----------------------------------------------------
-----------------------------------------------------*/
-
+// let upper bound be public so we know when we can't allocate any more memory
+int upper_bound;
 
 /*this routine is guaranteed to be called before any of the other routines, 
 and can do whatever initialization is needed.  The memory to be managed is passed into this routine. */
-// what data structure do you wanna use to store the memory?
 void mem_init(unsigned char *my_memory, unsigned int my_mem_size){
     
-    // create a stack with pointers to different sizes
+    // set upper bound of memory
+    // cannot go past here
+    upper_bound = my_memory + my_mem_size;
 
-    // get array of sizes for our stacks
-    // base = 2, expStart = 2, expEnd = 11
+    // initialize head block
+    int startLoc = my_memory; // start at first location in memory
+    int size = my_mem_size;
+    char status = 'f';         // entire memory free at first
+
+    // the head will ALWAYS have NULL for prev
+    // as user allocates mem, will fill in next
+    head = createBlock(startLoc, size, status, NULL, NULL);
+    cur = head;   // for now cur is head
+
+
+/*
+    int cur;
+    for(int i = 0; i < my_mem_size; i++){
+
+        // cur is the ptr to the mem addr of my_mem + i
+        cur = my_memory + i;
+        printf("%u\t", cur);
+
     
-    // vars for exponent arr
-    int base = 2;
-    int expStart = 0;
-    // how many powers of two we can have
-    // with this mem size
-    int expEnd = log2(my_mem_size);
-
-    
-    // exponent arr
-    static int expArr[expEnd - expStart];
-    // fill array
-    fillExp(expArr, base, expStart, expEnd); 
-
-
-    
-    for(int i = 0; i < (expEnd-expStart); i++){
-        printf("%d\n", expArr[i]);
     }
-    
-
-   /* 
-   strategy: have different stacks with different sizes memory chunks
-   when the user asks for a chunk of memory, find the size that is closest
-   to the memory size required, and allocate it
-
-   if there is no free memory for that size, allocate from another stack
-
-    know that a memory chunk is empty if 'e' stored in that spot
-   */
-
-    // represents number of sections we will have
-    /*
-    int numPartitions = expEnd - expStart;
-
-    int sizePerPartition = my_mem_size/numPartitions;
-
-    printf("%d", sizePerPartition);
-    */
-
+*/
 
 }
 
-/*
+
 //a function functionally equivalent to malloc() , but allocates it from the memory pool passed to mem_init() 
 void *my_malloc(unsigned size){
+
+    // set aside space to hold data of new block
+
+    int prevEndLoc = cur->start_loc + cur->size;
+    int loc = prevEndLoc + 1;
+
+    // if allocating this block goes beyond the upper bound, exit
+    if(loc + size > upper_bound){
+        printf("OUT OF BOUNDS, no more space to allocate, allocation unsuccessful");
+        return;
+    }
+
+    // if within bounds creare new block
+
+    // find the previous block
+    Block *prev;
+    // if empty ll, head is prev
+    if(head->next == NULL){
+        prev = head;
+    }
+    // otherwise prev will be cur
+    else{
+        prev = cur;
+    }
+
+    Block *newBlock = createBlock(loc, size, 'a', prev, NULL); // next is null 
+
+    cur->next = newBlock;  // set this block to be after cur
+    cur = newBlock;        // set cur to be this block
+    
 }
 
 // a function equivalent to free() , but returns the memory to the pool passed to mem_init()
 void my_free(void *mem_pointer){
+
+
+
 }
+/*
 // provides statistics about the current allocation of the memory pool.
 void mem_get_stats(mem_stats_ptr mem_stats_ptr){
 }
