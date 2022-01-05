@@ -33,7 +33,7 @@ int fillExp(int arr[], int base, int expStart, int expEnd){
 }
 
 int fillPartitions(int arr[]){
-    
+    return 0;
 }
 
 /*----------------------------------------------------
@@ -53,21 +53,22 @@ void mem_init(unsigned char *my_memory, unsigned int my_mem_size){
     // vars for exponent arr
     int base = 2;
     int expStart = 0;
-    int expEnd = 15;
+    // how many powers of two we can have
+    // with this mem size
+    int expEnd = log2(my_mem_size);
 
     
-
     // exponent arr
-    static int expArr[16];
+    static int expArr[expEnd - expStart];
     // fill array
     fillExp(expArr, base, expStart, expEnd); 
 
 
-    /*
-    for(int i = 0; i < 11; i++){
+    
+    for(int i = 0; i < (expEnd-expStart); i++){
         printf("%d\n", expArr[i]);
     }
-    */
+    
 
    /* 
    strategy: have different stacks with different sizes memory chunks
