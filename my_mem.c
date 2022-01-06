@@ -95,22 +95,28 @@ void insertBehind(Block *newBlock, Block *oldBlock){
 
     // if at head
     if(oldBlock->prev == NULL){
-        
+
         oldBlock->prev = newBlock;
         newBlock->next = oldBlock;
 
-        newBlock->prev = NULL;
+        oldBlock->size = oldBlock->size - newBlock->size;
+        oldBlock->loc= oldBlock->loc + newBlock->size;
+
         head = newBlock;
         return;
     }
 
-    Block *prev = createBlock(oldBlock->prev->size, oldBlock->prev->loc, oldBlock->prev->status, oldBlock->prev->prev, newBlock);
-    Block *next = createBlock(oldBlock->size - newBlock->size, oldBlock->loc + newBlock->size, oldBlock->status, newBlock, oldBlock->next);
+    oldBlock->size = oldBlock->size - newBlock->size;
+    oldBlock->loc= oldBlock->loc + newBlock->size;
 
-    oldBlock = next;
-    //oldBlock->prev->next = newBlock;
-    newBlock->prev = prev;
-    newBlock->next = next;
+    newBlock->next = oldBlock;
+    newBlock->prev = oldBlock->prev;
+
+    newBlock->next->prev = newBlock;
+    newBlock->prev->next = newBlock;
+
+
+    printLL();
     
     
 }
@@ -153,7 +159,6 @@ void *my_malloc(unsigned size){
     int diff;
 
     unsigned int loc;
-    int isHead;
 
     // if status is t we reached tail
     while(b->status != 't'){
@@ -172,10 +177,6 @@ void *my_malloc(unsigned size){
             // if not exact fit 
             if(diff > 0){
                 
-                if(b->loc == head->loc){
-                    isHead = 1;
-                }
-                
                 
                 // store b's starting loc
                 loc = b->loc;
@@ -188,12 +189,6 @@ void *my_malloc(unsigned size){
                 // insert newBlock behind b
                 // b.prev --> newBlock --> b
                 insertBehind(newBlock, b);
-
-                // if we are inserting at the head,
-                // insertion becomes the head: newBlock (new head) --> head --> ... --> TAIL
-                if(isHead){
-                    head = newBlock;
-                }
                 
                 // add the size to b's loc
                 //b->loc += size;
