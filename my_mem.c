@@ -73,6 +73,16 @@ void printLL(){
     printf("TAIL\n");
 }
 
+void printBlock(Block *b){
+    while(b->status != 't'){
+        printf("[location: %d, size: %d, status: %c] -->",
+        b->loc,
+        b->size,
+        b->status);
+        b = b->next;
+    }
+}
+
 // function to create a Block
 Block *createBlock(unsigned int size, unsigned int loc, char status, Block *prev, Block *next){
     
@@ -93,30 +103,31 @@ Block *createBlock(unsigned int size, unsigned int loc, char status, Block *prev
 // -->  oldBlock.prev --> newBlock --> oldBlock --> 
 void insertBehind(Block *newBlock, Block *oldBlock){
 
+    // adjust oldBlock loc & size
+    oldBlock->size = oldBlock->size - newBlock->size;   // new size is old size - size of new block
+    newBlock->loc=oldBlock->loc;
+    oldBlock->loc= oldBlock->loc + newBlock->size;      // new loc is old loc + size of new block
+
+
     // if at head
     if(oldBlock->prev == NULL){
 
         oldBlock->prev = newBlock;
         newBlock->next = oldBlock;
 
-        oldBlock->size = oldBlock->size - newBlock->size;
-        oldBlock->loc= oldBlock->loc + newBlock->size;
-
         head = newBlock;
         return;
     }
 
-    oldBlock->size = oldBlock->size - newBlock->size;
-    oldBlock->loc= oldBlock->loc + newBlock->size;
+    
 
+    // oldBlock->prev <-- newBlock --> oldBlock
     newBlock->next = oldBlock;
     newBlock->prev = oldBlock->prev;
 
+    // oldBlock->prev --> newBlock <-- oldBlock
     newBlock->next->prev = newBlock;
     newBlock->prev->next = newBlock;
-
-
-    printLL();
     
     
 }
@@ -145,6 +156,7 @@ void mem_init(unsigned char *my_memory, unsigned int my_mem_size){
     
     head->next = tail;
     tail->prev = head;
+
     printLL();
 
 }
@@ -190,10 +202,6 @@ void *my_malloc(unsigned size){
                 // b.prev --> newBlock --> b
                 insertBehind(newBlock, b);
                 
-                // add the size to b's loc
-                //b->loc += size;
-                // subtract the size b's size
-                //b->size -= size; 
 
                 // we allocated so we can return
                 printLL();
@@ -205,7 +213,6 @@ void *my_malloc(unsigned size){
         }
         // keep looking for a suitable empty block
         b = b->next;
-        
         
     }
 
