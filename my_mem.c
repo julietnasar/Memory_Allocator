@@ -84,7 +84,7 @@ void mem_init(unsigned char *my_memory, unsigned int my_mem_size){
     // the head will ALWAYS have NULL for prev
     // as user allocates mem, will fill in next
     head = createBlock(size, my_mem_size, status, NULL, NULL);
-    tail = head;   // for now tail is head
+    tail = NULL;   // for now tail is head
 
 }
 
@@ -100,6 +100,9 @@ void *my_malloc(unsigned size){
 
     Block *newBlock;
     unsigned int loc;
+
+
+
 
     while(b != NULL){
 
@@ -119,18 +122,35 @@ void *my_malloc(unsigned size){
                 b->size -= diff; 
 
                 // create new block to hold extra space & put in between b and b->next
-                loc = b->loc + b->size + 1; 
+                loc = b->loc + size + 1; 
 
                 // create new block the size of the difference that is free
                 // have it point to b
                 newBlock = createBlock((unsigned int)diff, loc, 'f', b, b->next);
-                // have b point to the newblock
-                b->next = newBlock;
+                
+                // if we are inserting at the head,
+                // insertion becomes the head
+                if(b->loc == head->loc){
+                    b->next = head;
+                    head = b;
+                }
+                // if we are inserting anywehre else
+                // insertion is put between b->prev & b->next
+                else{
+                    // have b point to the newblock
+                    b->next = newBlock;       // b points to the newBlock
+                    newBlock->next = b->next; // the newBlock now points to B's next
+                }
+                // we allocated so we can return
+                return;
+                
             }
-            // we allocated so we can return
-            return;
+            
 
         }
+        // keep looking for a suitable empty block
+        b = b->next;
+        
     }
 
     // if got here, we did not find an empty space big enough in the current 
