@@ -24,42 +24,7 @@ Block *head;
 Block *tail;
 
 
-
-// --> oldBlock --> newBlock --> oldBlock.next
-void insertFront(Block *newBlock, Block *oldBlock){
-
-    oldBlock->next->prev = newBlock;
-    newBlock->next = oldBlock->next;
-
-    oldBlock->next = newBlock;
-    newBlock->prev = oldBlock;
-}
-
-/*---------------------------------*/
-// direction: 
-// 'b' for backwards
-// 'f' for forwards
-// finds next free block going forwards or backwards
-Block *findFurthestFree(char direction){
-    // start at taul
-    Block *cur = tail;
-    // if 'b' go backwards
-    if(direction == 'b'){
-        while(cur->prev != NULL && cur->status == 'f'){
-            cur = cur->prev;
-        }
-    }
-    // if 'f' go forwards
-    else if(direction == 'f'&& cur->status == 'f'){
-        while(cur-> next != NULL){
-            cur = cur->next;
-        }
-    }
-    return cur;
-}
-
 // prints the linked list from head -> tail
-
 void printLL(){
 
     Block *b = head;
@@ -119,8 +84,6 @@ void insertBehind(Block *newBlock, Block *oldBlock){
         return;
     }
 
-    
-
     // oldBlock->prev <-- newBlock --> oldBlock
     newBlock->next = oldBlock;
     newBlock->prev = oldBlock->prev;
@@ -174,7 +137,6 @@ void *my_malloc(unsigned size){
     Block *b = head;
 
     int diff;
-
     unsigned int loc;
 
     // if status is t we reached tail
@@ -220,35 +182,13 @@ void *my_malloc(unsigned size){
         
     }
 
-    // if got here, we did not find an empty space big enough in the current 
-    // linked list, so we will try to add on to the end
-
-    unsigned int next_free_loc = tail->prev->loc + tail->prev->size+1;
-
-    // if allocating this block goes beyond the upper bound, exit
-    if(next_free_loc + size > MAX_SIZE){
-        printf("OUT OF BOUNDS, no more space to allocate, allocation unsuccessful");
-        return NULL;
-    }
-
-    // if within bounds create new block & insert right before tail
-    // head --> .... tail.prev --> newBlock --> tail
     
-
-
-    Block *newBlock = createBlock(next_free_loc, size, 'a', NULL, NULL); 
-    
-    tail->prev->next = newBlock;
-    newBlock->prev = tail->prev;
-
-    newBlock->next = tail;
-    tail->prev = newBlock;
-
-    
-    return newBlock;
+    printf("OUT OF BOUNDS, no more space to allocate, allocation unsuccessful");
+    return NULL;
 
 }
 
+// returns leftmost contiguously free block
 Block *leftmostFree(Block *b){
     Block *cur = b;
     // go left until reach head or hit non free block
@@ -259,6 +199,7 @@ Block *leftmostFree(Block *b){
     return cur;
 }
 
+// returns rightmost contiguous free block
 Block *rightmostFree(Block *b){
     Block *cur = b;
     // go right until reach head or hit non free block
@@ -313,7 +254,7 @@ void my_free(void *mem_pointer){
 
     // if not found return
     if(target->status == 't'){
-        printf("target not found\n");
+        printf("ERROR: target not found\n");
         return;
     }
 
@@ -323,22 +264,28 @@ void my_free(void *mem_pointer){
         return;
     }
 
-    // otherwise free the block
-    // set target's status to free
+    // free target
     target->status = 'f';
     
-    // check to see if we should merge with blocks behind or ahead
-    // of the newly freed block
+    // check to see if we should merge with blocks behind or ahead of the newly freed block
 
+    // find leftmost free block & rightmost free block
     Block *left = leftmostFree(target);
-    if(left != target){
+    Block *right = rightmostFree(target);
+
+    // if both leftmost & rightmost free blocks, merge leftmost with rightmost
+    if(left != target && right != target){
+        merge(left, right);
+    }
+    // if just found leftmost free, merge with target
+    else if(left != target){
         merge(left, target);
     }
-
-    Block *right = rightmostFree(target);
-    if(right != target){
+    // if just found rightmost free, merge with target
+    else{
         merge(target, right);
     }
+
 }
 
 
