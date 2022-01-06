@@ -23,21 +23,7 @@ struct blockType {
 Block *head;
 Block *tail;
 
-// -->  oldBlock.prev --> newBlock --> oldBlock --> 
-void insertBehind(Block *newBlock, Block *oldBlock){
 
-    if(oldBlock->prev == NULL){
-        oldBlock->prev = newBlock;
-        newBlock->next = oldBlock;
-    }
-    else{
-        oldBlock->prev->next = newBlock;
-        newBlock->prev = oldBlock->prev;
-
-        oldBlock->prev = newBlock;
-        newBlock->next = oldBlock;
-    }
-}
 
 // --> oldBlock --> newBlock --> oldBlock.next
 void insertFront(Block *newBlock, Block *oldBlock){
@@ -104,7 +90,30 @@ Block *createBlock(unsigned int size, unsigned int loc, char status, Block *prev
     return newBlock;
 }
 
+// -->  oldBlock.prev --> newBlock --> oldBlock --> 
+void insertBehind(Block *newBlock, Block *oldBlock){
 
+    // if at head
+    if(oldBlock->prev == NULL){
+        
+        oldBlock->prev = newBlock;
+        newBlock->next = oldBlock;
+
+        newBlock->prev = NULL;
+        head = newBlock;
+        return;
+    }
+
+    Block *prev = createBlock(oldBlock->prev->size, oldBlock->prev->loc, oldBlock->prev->status, oldBlock->prev->prev, newBlock);
+    Block *next = createBlock(oldBlock->size - newBlock->size, oldBlock->loc + newBlock->size, oldBlock->status, newBlock, oldBlock->next);
+
+    oldBlock = next;
+    //oldBlock->prev->next = newBlock;
+    newBlock->prev = prev;
+    newBlock->next = next;
+    
+    
+}
 
 /*this routine is guaranteed to be called before any of the other routines, 
 and can do whatever initialization is needed.  The memory to be managed is passed into this routine. */
@@ -187,9 +196,9 @@ void *my_malloc(unsigned size){
                 }
                 
                 // add the size to b's loc
-                b->loc += size;
+                //b->loc += size;
                 // subtract the size b's size
-                b->size -= size; 
+                //b->size -= size; 
 
                 // we allocated so we can return
                 printLL();
