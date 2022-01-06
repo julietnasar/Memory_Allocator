@@ -47,6 +47,21 @@ Block *findFurthestFree(char direction){
     return cur;
 }
 
+// prints the linked list from head -> tail
+/*
+void printLL(){
+
+    Block *b = head;
+    while(b->status != 't'){
+        printf("[location: %d, size: %d, status: %c] -->",
+        b->loc,
+        b->size,
+        b->status);
+        b = b->next;
+    }
+    printf("TAIL\n");
+}*/
+
 // function to create a Block
 Block *createBlock(unsigned int size, unsigned int loc, char status, Block *prev, Block *next){
     
@@ -83,10 +98,12 @@ void mem_init(unsigned char *my_memory, unsigned int my_mem_size){
 
     // the head will ALWAYS have NULL for prev
     // as user allocates mem, will fill in next
-    head = createBlock(size, 0, status, NULL, tail);
+    head = createBlock(size, 0, status, NULL, NULL);
     // tail acts as NULL ptr with no real value except being at the end
     // but this is important and allows us to backtrack from the end of the list
     tail = createBlock(0, 0, 't', head, NULL);  // status is 't' for tail 
+    head->next = tail;
+    //printLL();
 
 }
 
@@ -164,6 +181,9 @@ void *my_malloc(unsigned size){
 
     // if within bounds create new block & insert right before tail
     newBlock = createBlock(next_free_loc, size, 'a', tail->prev, tail); // next is null 
+    tail->prev->next = newBlock;
+
+    //printLL();
 
 }
 
@@ -265,6 +285,8 @@ void my_free(void *mem_pointer){
         target->next = next->next;
         next->prev = target;
     }
+
+    //printLL();
 }
 
 
@@ -294,8 +316,9 @@ void mem_get_stats(mem_stats_struct *mem_stats){
 
     // go through linked list starting with head
     Block *b = head;
-
-    while(b!= NULL){
+    
+    // go until we reach tail
+    while(b->status != 't'){
 
         // increase sum stats
         char status = b->status;
