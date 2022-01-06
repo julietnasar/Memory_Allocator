@@ -83,16 +83,16 @@ void mem_init(unsigned char *my_memory, unsigned int my_mem_size){
 
     // the head will ALWAYS have NULL for prev
     // as user allocates mem, will fill in next
-    head = createBlock(size, my_mem_size, status, NULL, NULL);
-    tail = NULL;   // for now tail is head
+    head = createBlock(size, 0, status, NULL, tail);
+    // tail acts as NULL ptr with no real value except being at the end
+    // but this is important and allows us to backtrack from the end of the list
+    tail = createBlock(0, 0, 't', head, NULL);  // status is 't' for tail 
 
 }
 
 
 //a function functionally equivalent to malloc() , but allocates it from the memory pool passed to mem_init() 
 void *my_malloc(unsigned size){
-
-
     // first try and find a free block within the linked list
     Block *b = head;
 
@@ -101,10 +101,8 @@ void *my_malloc(unsigned size){
     Block *newBlock;
     unsigned int loc;
 
-
-
-
-    while(b != NULL){
+    // if status is t we reached tail
+    while(b->status != 't'){
 
         // if we found a free block that is a fit size-wise    
         if(b->status == 'f' && b->size >= size){
@@ -122,9 +120,9 @@ void *my_malloc(unsigned size){
                 b->size -= diff; 
 
                 // create new block to hold extra space & put in between b and b->next
+                
+                // loc of new free block 
                 loc = b->loc + size + 1; 
-
-                // create new block the size of the difference that is free
                 // have it point to b
                 newBlock = createBlock((unsigned int)diff, loc, 'f', b, b->next);
                 
@@ -146,18 +144,17 @@ void *my_malloc(unsigned size){
                 
             }
             
-
+            // keep looking for a suitable empty block
+            b = b->next;
         }
-        // keep looking for a suitable empty block
-        b = b->next;
+        
         
     }
 
     // if got here, we did not find an empty space big enough in the current 
     // linked list, so we will try to add on to the end
 
-    // set aside space to hold data of new block
-    unsigned int next_free_loc = tail->loc + tail->size+1;
+    unsigned int next_free_loc = tail->prev->loc + tail->prev->size+1;
 
     // if allocating this block goes beyond the upper bound, exit
     if(next_free_loc + size > MAX_SIZE){
@@ -165,13 +162,9 @@ void *my_malloc(unsigned size){
         return;
     }
 
-    // if within bounds create new block
+    // if within bounds create new block & insert right before tail
+    newBlock = createBlock(next_free_loc, size, 'a', tail->prev, tail); // next is null 
 
-    newBlock = createBlock(next_free_loc, size, 'a', tail, NULL); // next is null 
-
-    tail->next = newBlock;  // set this block to be after tail
-    tail = newBlock;        // set tail to be this block
-    
 }
 
 // a function equivalent to free() , but returns the memory to the pool passed to mem_init()
@@ -185,7 +178,8 @@ void my_free(void *mem_pointer){
     Block *target = head;
 
     // while there is a next, go through linked list
-    while(target->next != NULL){
+    // until we reach the tail ('t')
+    while(target->status != 't'){
         // if we found our target memory location, break
         if(target->loc == offset){
             break;
@@ -193,62 +187,83 @@ void my_free(void *mem_pointer){
         // otherwise continue the search
         target = target->next;
     }
-    
-    // if we found our target, and didn't just fall of the end of 
-    // the linked list
-    if(target->loc == offset){
 
-        // if target already freed, return from func call
-        if(target->status == 'f'){
-            return;
+    // at this point target either contains the block we were looking
+    // for or it didn't find it and target is the tail
+
+    // if not found return
+    if(target->status == 't'){
+        printf("target not found");
+        return;
+    }
+
+    // if target already freed, return from func call
+    if (target->status == 'f')
+    {
+        return;
+    }
+
+    // otherwise free the block
+    else
+    {
+        // set target's status to free
+        target->status = 'f';
+    }
+
+    // check to see if we should merge with blocks behind or ahead
+    // of the newly freed block
+
+    // find the last contiguously free block moving backwards
+    int prevFreeSize = 0;
+
+    Block *prev = target;
+    while (prev->prev != NULL && prev->prev->status == 'f')
+    {
+        prev = prev->prev;
+        prevFreeSize += prev->size;
+    }
+
+    // if we found free space
+    if (prevFreeSize > 0)
+    {
+        // start this free block at the prev free block
+        target->loc = prev->loc;
+        target->size += prevFreeSize; // add on to size
+
+        // if we backtracked to the head
+        if (prev->loc == head->loc)
+        {
+            // set the head to be target
+            head = target;
+            head->next = target->next;
         }
-        // otherwise free the block
-        else{
-            // set target's status to free
-            target->status = 'f';
+        // otherwise just delete the prev free nodes by jumping over them
+        else
+        {
+            target->prev = prev->prev;
+            prev->next = target;
         }
+    }
 
-        // check to see if we should merge with blocks behind or ahead
-        // of the newly freed block
+    // find the last contiguously free block moving forward
+    Block *next = target;
+    int nextFreeSize;
+    // while status is not 't' we did not reach the end
+    while (next->next->status == 'f')
+    {
+        next = next->next;
+        nextFreeSize += next->size;
+    }
 
-        // find the last contiguously free block moving backwards
-        Block *prev = target;
-        while(prev->prev != NULL && prev->prev->status == 'f'){
-            prev = prev->prev;
-        }
+    // if we found contigous empty blocks, merge
+    if (next->loc != target->loc)
+    {
 
-        // if we found contigous empty blocks, merge
-        if(prev->loc != target->loc){
-
-            // start this free block at the prev free block
-            target->loc = prev->loc;
-            target->size += prev->size; // add on to size
-
-            // if prev->prev isn't the head, delete it
-            if(prev->prev->loc != head->loc){
-                prev->prev->next = target;
-            }
-            // otherwise make target the head
-            else{
-                head = target;
-            }
-        }
-
-        // find the last contiguously free block moving forward
-        Block *next = target;
-        while(next->next != NULL && next->next->status == 'f'){
-            next = next->next;
-        }
-
-        // if we found contigous empty blocks, merge
-        if(next->loc != target->loc){
-
-            // add on next's size to target's size
-            target->size += next->size;
-            // delete next
-            target->next = next->next;
-
-        }
+        // add on next's size to target's size
+        target->size += nextFreeSize;
+        // skip over the blocks to 'delete' them
+        target->next = next->next;
+        next->prev = target;
     }
 }
 
