@@ -70,7 +70,7 @@ void printLL(){
         b->status);
         b = b->next;
     }
-    printf("TAIL\n");
+    printf(" TAIL\n");
 }
 
 void printBlock(Block *b){
@@ -157,8 +157,6 @@ void mem_init(unsigned char *my_memory, unsigned int my_mem_size){
     head->next = tail;
     tail->prev = head;
 
-    printLL();
-
 }
 
 
@@ -211,7 +209,6 @@ void *my_malloc(unsigned size){
                 
 
                 // we allocated so we can return
-                printLL();
                 return newBlock;
                 
             }
@@ -247,10 +244,47 @@ void *my_malloc(unsigned size){
     newBlock->next = tail;
     tail->prev = newBlock;
 
-    printLL();
+    
     return newBlock;
 
 }
+
+Block *leftmostFree(Block *b){
+    Block *cur = b;
+    // go left until reach head or hit non free block
+    while(cur != head && cur->prev->status == 'f'){
+        cur = cur->prev;
+    }
+    // return leftmost free
+    return cur;
+}
+
+Block *rightmostFree(Block *b){
+    Block *cur = b;
+    // go right until reach head or hit non free block
+    while(cur != tail && cur->next->status == 'f'){
+        cur = cur->next;
+    }
+    // return rightmost free
+    return cur;
+}
+
+// block a must be befpre block b location wise
+// a ---> b ---> c
+// a ------------> c
+void merge(Block *a, Block *b){
+
+    // a is acquiring b, so add
+    // b's size to a's size
+    a->size += (b->loc - a->loc);
+
+    // skip over middle
+    a->next = b->next;
+    b->next->prev = a;
+    
+}
+
+
 
 // a function equivalent to free() , but returns the memory to the pool passed to mem_init()
 void my_free(void *mem_pointer){
@@ -258,8 +292,7 @@ void my_free(void *mem_pointer){
     // get mem_pointer's offset from the beginning
     // of our entire memory block
     Block *b = (Block*)mem_pointer;
-    int loc_target = b->size;
-    
+    int loc_target = b->loc;
 
     // go through ll starting with head to find the pointer
     Block *target = head;
@@ -280,7 +313,7 @@ void my_free(void *mem_pointer){
 
     // if not found return
     if(target->status == 't'){
-        printf("target not found");
+        printf("target not found\n");
         return;
     }
 
@@ -291,69 +324,21 @@ void my_free(void *mem_pointer){
     }
 
     // otherwise free the block
-    else
-    {
-        // set target's status to free
-        target->status = 'f';
-    }
-
+    // set target's status to free
+    target->status = 'f';
+    
     // check to see if we should merge with blocks behind or ahead
     // of the newly freed block
 
-    // find the last contiguously free block moving backwards
-    int prevFreeSize = 0;
-
-    Block *prev = target;
-    while (prev->prev != NULL && prev->prev->status == 'f')
-    {
-        prev = prev->prev;
-        prevFreeSize += prev->size;
+    Block *left = leftmostFree(target);
+    if(left != target){
+        merge(left, target);
     }
 
-    // if we found free space
-    if (prevFreeSize > 0)
-    {
-        // start this free block at the prev free block
-        target->loc = prev->loc;
-        target->size += prevFreeSize; // add on to size
-
-        // if we backtracked to the head
-        if (prev->loc == head->loc)
-        {
-            // set the head to be target
-            head = target;
-            head->next = target->next;
-        }
-        // otherwise just delete the prev free nodes by jumping over them
-        else
-        {
-            target->prev = prev->prev;
-            prev->next = target;
-        }
+    Block *right = rightmostFree(target);
+    if(right != target){
+        merge(target, right);
     }
-
-    // find the last contiguously free block moving forward
-    Block *next = target;
-    int nextFreeSize;
-    // while status is not 't' we did not reach the end
-    while (next->next->status == 'f')
-    {
-        next = next->next;
-        nextFreeSize += next->size;
-    }
-
-    // if we found contigous empty blocks, merge
-    if (next->loc != target->loc)
-    {
-
-        // add on next's size to target's size
-        target->size += nextFreeSize;
-        // skip over the blocks to 'delete' them
-        target->next = next->next;
-        next->prev = target;
-    }
-
-    printLL();
 }
 
 
@@ -469,22 +454,28 @@ int main(int argc, char **argv)
 
         sprintf(buf, "after iteration %d size %d", i, sizes[i]);
         print_stats(buf);
+        printLL();
     }
 
     my_free(ptr_array[1]);
     print_stats("after free #1");
+    printLL();
 
     my_free(ptr_array[3]);
     print_stats("after free #3");
+    printLL();
 
     my_free(ptr_array[2]);
     print_stats("after free #2");
+    printLL();
 
     my_free(ptr_array[0]);
     print_stats("after free #0");
+    printLL();
 
     my_free(ptr_array[4]);
     print_stats("after free #4"); 
+    printLL();
     
 } 
 
