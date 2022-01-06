@@ -3,11 +3,17 @@
 # include <string.h>
 
 
+
+
+
+unsigned char *MEMORY;
+unsigned int MAX_SIZE;
+
 // structure for memory location blocks
 typedef struct blockType Block;
 struct blockType {
-    int start_loc;  // starting mem location of this memory block
-    int size;       // size in mem locations of this block
+    unsigned int size;       // size in mem locations of this block
+    unsigned int loc; // relative loc at this point in memory (in relation to MEMORY allocated from init)
     char status;    // 'a' for allocated 'f' for free
     struct blockType *prev;    // pointer to previous Block
     struct blockType *next;    // pointer to next block
@@ -15,57 +21,70 @@ struct blockType {
 
 // head of the linked list & the current node must be global
 Block *head;
-Block *cur;
+Block *tail;
+
+
+/*---------------------------------*/
+// direction: 
+// 'b' for backwards
+// 'f' for forwards
+// finds next free block going forwards or backwards
+Block *findFurthestFree(char direction){
+    // start at taul
+    Block *cur = tail;
+    // if 'b' go backwards
+    if(direction == 'b'){
+        while(cur->prev != NULL && cur->status == 'f'){
+            cur = cur->prev;
+        }
+    }
+    // if 'f' go forwards
+    else if(direction == 'f'&& cur->status == 'f'){
+        while(cur-> next != NULL){
+            cur = cur->next;
+        }
+    }
+    return cur;
+}
 
 // function to create a Block
-Block *createBlock(int start_loc, int size, char status, Block *prev, Block *next){
+Block *createBlock(unsigned int size, unsigned int loc, char status, Block *prev, Block *next){
     
-    Block* newBlock;
+    Block *newBlock;
 
-    newBlock = (Block *)malloc(sizeOf(newBlock));
+    newBlock = (Block *)malloc(sizeof(Block));
 
-    newBlock->start_loc = start_loc;
     newBlock->size = size;
+    newBlock->loc;
     newBlock->status = status;
     newBlock->prev = prev;
     newBlock->next = next;
-
+    
+    
     return newBlock;
 }
 
-// let upper bound be public so we know when we can't allocate any more memory
-int upper_bound;
+
 
 /*this routine is guaranteed to be called before any of the other routines, 
 and can do whatever initialization is needed.  The memory to be managed is passed into this routine. */
 void mem_init(unsigned char *my_memory, unsigned int my_mem_size){
     
-    // set upper bound of memory
-    // cannot go past here
-    upper_bound = my_memory + my_mem_size;
+    // assign global vars
+    MEMORY = my_memory;
+    MAX_SIZE = my_mem_size;
+
+    //printf("%u\n%u\n", mem_lower_bound, mem_upper_bound);
 
     // initialize head block
-    int startLoc = my_memory; // start at first location in memory
-    int size = my_mem_size;
+    unsigned int size = my_mem_size;
+    unsigned int running_size = my_mem_size;
     char status = 'f';         // entire memory free at first
 
     // the head will ALWAYS have NULL for prev
     // as user allocates mem, will fill in next
-    head = createBlock(startLoc, size, status, NULL, NULL);
-    cur = head;   // for now cur is head
-
-
-/*
-    int cur;
-    for(int i = 0; i < my_mem_size; i++){
-
-        // cur is the ptr to the mem addr of my_mem + i
-        cur = my_memory + i;
-        printf("%u\t", cur);
-
-    
-    }
-*/
+    head = createBlock(size, my_mem_size, status, NULL, NULL);
+    tail = head;   // for now tail is head
 
 }
 
@@ -77,23 +96,35 @@ void *my_malloc(unsigned size){
     // first try and find a free block within the linked list
     Block *b = head;
 
-    while(b->next != NULL){
+    int diff;
+
+    Block *newBlock;
+    unsigned int loc;
+
+    while(b != NULL){
 
         // if we found a free block that is a fit size-wise    
         if(b->status == 'f' && b->size >= size){
+
             // allocate this block
-            b->status = "a";
+            b->status = 'a';
 
             // get size difference    
-            int diff = b->size - size;
+            diff = b->size - size;
 
             // if not exact fit 
             if(diff > 0){
-                b->size -= diff; // subtract diff from b
+
+                // subtract the size diff from b's size
+                b->size -= diff; 
 
                 // create new block to hold extra space & put in between b and b->next
-                int newBlockLoc = b->start_loc + b->size + 1;  
-                Block *newBlock = createBlock(newBlockLoc, diff, 'f', b, b->next);
+                loc = b->loc + b->size + 1; 
+
+                // create new block the size of the difference that is free
+                // have it point to b
+                newBlock = createBlock((unsigned int)diff, loc, 'f', b, b->next);
+                // have b point to the newblock
                 b->next = newBlock;
             }
             // we allocated so we can return
@@ -106,37 +137,29 @@ void *my_malloc(unsigned size){
     // linked list, so we will try to add on to the end
 
     // set aside space to hold data of new block
-    int prevEndLoc = cur->start_loc + cur->size;
-    int loc = prevEndLoc + 1;
+    unsigned int next_free_loc = tail->loc + tail->size+1;
 
     // if allocating this block goes beyond the upper bound, exit
-    if(loc + size > upper_bound){
+    if(next_free_loc + size > MAX_SIZE){
         printf("OUT OF BOUNDS, no more space to allocate, allocation unsuccessful");
         return;
     }
 
     // if within bounds create new block
 
-    // find the previous block
-    Block *prev;
-    // if empty ll, head is prev
-    if(head->next == NULL){
-        prev = head;
-    }
-    // otherwise prev will be cur
-    else{
-        prev = cur;
-    }
+    newBlock = createBlock(next_free_loc, size, 'a', tail, NULL); // next is null 
 
-    Block *newBlock = createBlock(loc, size, 'a', prev, NULL); // next is null 
-
-    cur->next = newBlock;  // set this block to be after cur
-    cur = newBlock;        // set cur to be this block
+    tail->next = newBlock;  // set this block to be after tail
+    tail = newBlock;        // set tail to be this block
     
 }
 
 // a function equivalent to free() , but returns the memory to the pool passed to mem_init()
 void my_free(void *mem_pointer){
+
+    // get mem_pointer's offset from the beginning
+    // of our entire memory block
+    int offset = (void *)MEMORY - mem_pointer;
 
     // go through ll starting with head to find the pointer
     Block *target = head;
@@ -144,20 +167,29 @@ void my_free(void *mem_pointer){
     // while there is a next, go through linked list
     while(target->next != NULL){
         // if we found our target memory location, break
-        if(target->start_loc == mem_pointer){
+        if(target->loc == offset){
             break;
         }
         // otherwise continue the search
         target = target->next;
-
     }
     
     // if we found our target, and didn't just fall of the end of 
     // the linked list
-    if(target->start_loc == mem_pointer){
+    if(target->loc == offset){
 
-        // set target's status to free
-        target->status = 'f';
+        // if target already freed, return from func call
+        if(target->status == 'f'){
+            return;
+        }
+        // otherwise free the block
+        else{
+            // set target's status to free
+            target->status = 'f';
+        }
+
+        // check to see if we should merge with blocks behind or ahead
+        // of the newly freed block
 
         // find the last contiguously free block moving backwards
         Block *prev = target;
@@ -166,14 +198,14 @@ void my_free(void *mem_pointer){
         }
 
         // if we found contigous empty blocks, merge
-        if(prev->start_loc != target->start_loc){
+        if(prev->loc != target->loc){
 
             // start this free block at the prev free block
-            target->start_loc = prev->start_loc;
+            target->loc = prev->loc;
             target->size += prev->size; // add on to size
 
             // if prev->prev isn't the head, delete it
-            if(prev->prev->start_loc != head->start_loc){
+            if(prev->prev->loc != head->loc){
                 prev->prev->next = target;
             }
             // otherwise make target the head
@@ -189,7 +221,7 @@ void my_free(void *mem_pointer){
         }
 
         // if we found contigous empty blocks, merge
-        if(next->start_loc != target->start_loc){
+        if(next->loc != target->loc){
 
             // add on next's size to target's size
             target->size += next->size;
@@ -197,10 +229,7 @@ void my_free(void *mem_pointer){
             target->next = next->next;
 
         }
-
-        
     }
-
 }
 
 
@@ -215,24 +244,6 @@ struct mem_stats {
 	int largest_block_used;
 };
 
-/*
-// function to create a Block
-mem_stats_struct *createMemStatsStruct(int start_loc, int size, char status, Block *prev, Block *next){
-    
-    Block* newBlock;
-
-    newBlock = (Block *)malloc(sizeOf(newBlock));
-
-    newBlock->start_loc = start_loc;
-    newBlock->size = size;
-    newBlock->status = status;
-    newBlock->prev = prev;
-    newBlock->next = next;
-
-    return newBlock;
-}
-*/
-
 // provides statistics about the current allocation of the memory pool.
 void mem_get_stats(mem_stats_struct *mem_stats){
 
@@ -241,29 +252,29 @@ void mem_get_stats(mem_stats_struct *mem_stats){
     int sum_used = 0;
 
     // set to NULL
-    Block *largest_free = NULL;
-    Block *largest_alloc = NULL;
-    Block *smallest_free = NULL;
-    Block *smallest_alloc = NULL;
+    int largest_free = 0;
+    int largest_alloc = 0;
+    int smallest_free = 0;
+    int smallest_alloc = 0;
 
     // go through linked list starting with head
     Block *b = head;
 
-    while(b != NULL){
+    while(b!= NULL){
 
         // increase sum stats
         char status = b->status;
-        char size = b->size;
+        int size = b->size;
         if(status == 'f'){
             sum_free += 1; // increase sum free blocks
 
             // check if larger than largest free
-            if(largest_free == NULL || size > largest_free.size){
-                largest_free = b;
+            if(size > largest_free){
+                largest_free = size;
             }
             // check if smaller than smallest free
-            if(smallest_free == NULL || size < largest_free.size){
-                smallest_free = b;
+            else if(size < largest_free){
+                smallest_free = size;
             }
 
         }
@@ -271,19 +282,17 @@ void mem_get_stats(mem_stats_struct *mem_stats){
             sum_used += 1; // increase sum of used blocks
 
             // check if larger than largest free
-            if(largest_alloc == NULL || size > largest_alloc.size){
-                largest_free = b;
+            if(size > largest_alloc){
+                largest_free = size;
             }
             // check if smaller than smallest alloc
-            if(smallest_alloc == NULL || size < largest_alloc.size){
-                smallest_alloc = b;
+            else if(size < largest_alloc){
+                smallest_alloc = size;
             }
-
         }
 
-       
-
-
+        // get next mem block
+        b = b->next;
     }
 
      // set stats to inputted mem_stats_struc
@@ -293,25 +302,23 @@ void mem_get_stats(mem_stats_struct *mem_stats){
      mem_stats->largest_block_used = largest_alloc;
      mem_stats->smallest_block_free = smallest_free;
      mem_stats->smallest_block_used = smallest_alloc;
-
 }
 
 
 void print_stats(char *prefix) {
 
+    mem_stats_struct *mem_stats;
+    mem_stats = (mem_stats_struct *)malloc(sizeof(mem_stats_struct));
 
-
-    mem_stats_struct mem_stats;
-
-    mem_get_stats(&mem_stats);
+    mem_get_stats(mem_stats);
     printf("mem stats: %s: %d free blocks, %d used blocks, free blocks: smallest=%d largest=%d, used blocks: smallest=%d largest=%d\n",
 	    prefix,
-	    mem_stats.num_blocks_free,
-	    mem_stats.num_blocks_used,
-	    mem_stats.smallest_block_free,
-	    mem_stats.largest_block_free,
-	    mem_stats.smallest_block_used,
-	    mem_stats.largest_block_used);
+	    mem_stats->num_blocks_free,
+	    mem_stats->num_blocks_used,
+	    mem_stats->smallest_block_free,
+	    mem_stats->largest_block_free,
+	    mem_stats->smallest_block_used,
+	    mem_stats->largest_block_used);
 } 
 
 
