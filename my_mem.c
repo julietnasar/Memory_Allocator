@@ -23,6 +23,31 @@ struct blockType {
 Block *head;
 Block *tail;
 
+// -->  oldBlock.prev --> newBlock --> oldBlock --> 
+void insertBehind(Block *newBlock, Block *oldBlock){
+
+    if(oldBlock->prev == NULL){
+        oldBlock->prev = newBlock;
+        newBlock->next = oldBlock;
+    }
+    else{
+        oldBlock->prev->next = newBlock;
+        newBlock->prev = oldBlock->prev;
+
+        oldBlock->prev = newBlock;
+        newBlock->next = oldBlock;
+    }
+}
+
+// --> oldBlock --> newBlock --> oldBlock.next
+void insertFront(Block *newBlock, Block *oldBlock){
+
+    oldBlock->next->prev = newBlock;
+    newBlock->next = oldBlock->next;
+
+    oldBlock->next = newBlock;
+    newBlock->prev = oldBlock;
+}
 
 /*---------------------------------*/
 // direction: 
@@ -48,7 +73,7 @@ Block *findFurthestFree(char direction){
 }
 
 // prints the linked list from head -> tail
-/*
+
 void printLL(){
 
     Block *b = head;
@@ -60,7 +85,7 @@ void printLL(){
         b = b->next;
     }
     printf("TAIL\n");
-}*/
+}
 
 // function to create a Block
 Block *createBlock(unsigned int size, unsigned int loc, char status, Block *prev, Block *next){
@@ -101,11 +126,14 @@ void mem_init(unsigned char *my_memory, unsigned int my_mem_size){
     head = createBlock(size, 0, status, NULL, NULL);
     // tail acts as NULL ptr with no real value except being at the end
     // but this is important and allows us to backtrack from the end of the list
-    tail = createBlock(0, 0, 't', head, NULL);  // status is 't' for tail 
+    tail = createBlock(0, 0, 't', NULL, NULL);  // status is 't' for tail 
+    
     head->next = tail;
-    //printLL();
+    tail->prev = head;
+    printLL();
 
 }
+
 
 
 //a function functionally equivalent to malloc() , but allocates it from the memory pool passed to mem_init() 
@@ -115,55 +143,64 @@ void *my_malloc(unsigned size){
 
     int diff;
 
-    Block *newBlock;
     unsigned int loc;
+    int isHead;
 
     // if status is t we reached tail
     while(b->status != 't'){
+        
+        /*printf("[location: %d, size: %d, status: %c] -->",
+        b->loc,
+        b->size,
+        b->status);*/
 
         // if we found a free block that is a fit size-wise    
         if(b->status == 'f' && b->size >= size){
-
-            // allocate this block
-            b->status = 'a';
 
             // get size difference    
             diff = b->size - size;
 
             // if not exact fit 
             if(diff > 0){
-
-                // subtract the size diff from b's size
-                b->size -= diff; 
-
-                // create new block to hold extra space & put in between b and b->next
                 
-                // loc of new free block 
-                loc = b->loc + size + 1; 
-                // have it point to b
-                newBlock = createBlock((unsigned int)diff, loc, 'f', b, b->next);
-                
-                // if we are inserting at the head,
-                // insertion becomes the head
                 if(b->loc == head->loc){
-                    b->next = head;
-                    head = b;
+                    isHead = 1;
                 }
-                // if we are inserting anywehre else
-                // insertion is put between b->prev & b->next
-                else{
-                    // have b point to the newblock
-                    b->next = newBlock;       // b points to the newBlock
-                    newBlock->next = b->next; // the newBlock now points to B's next
+                
+                
+                // store b's starting loc
+                loc = b->loc;
+                
+                // create new block at b's starting loc, 
+                // of specified size,
+                // with location at b's starting loc
+                Block *newBlock = createBlock(size, loc, 'a', NULL, NULL);
+                
+                // insert newBlock behind b
+                // b.prev --> newBlock --> b
+                insertBehind(newBlock, b);
+
+                // if we are inserting at the head,
+                // insertion becomes the head: newBlock (new head) --> head --> ... --> TAIL
+                if(isHead){
+                    head = newBlock;
                 }
+                
+                // add the size to b's loc
+                b->loc += size;
+                // subtract the size b's size
+                b->size -= size; 
+
                 // we allocated so we can return
-                return;
+                printLL();
+                return newBlock;
                 
             }
             
-            // keep looking for a suitable empty block
-            b = b->next;
+            
         }
+        // keep looking for a suitable empty block
+        b = b->next;
         
         
     }
@@ -176,14 +213,24 @@ void *my_malloc(unsigned size){
     // if allocating this block goes beyond the upper bound, exit
     if(next_free_loc + size > MAX_SIZE){
         printf("OUT OF BOUNDS, no more space to allocate, allocation unsuccessful");
-        return;
+        return NULL;
     }
 
     // if within bounds create new block & insert right before tail
-    newBlock = createBlock(next_free_loc, size, 'a', tail->prev, tail); // next is null 
-    tail->prev->next = newBlock;
+    // head --> .... tail.prev --> newBlock --> tail
+    
 
-    //printLL();
+
+    Block *newBlock = createBlock(next_free_loc, size, 'a', NULL, NULL); 
+    
+    tail->prev->next = newBlock;
+    newBlock->prev = tail->prev;
+
+    newBlock->next = tail;
+    tail->prev = newBlock;
+
+    printLL();
+    return newBlock;
 
 }
 
@@ -286,7 +333,7 @@ void my_free(void *mem_pointer){
         next->prev = target;
     }
 
-    //printLL();
+    printLL();
 }
 
 
@@ -341,7 +388,7 @@ void mem_get_stats(mem_stats_struct *mem_stats){
 
             // check if larger than largest free
             if(size > largest_alloc){
-                largest_free = size;
+                largest_alloc = size;
             }
             // check if smaller than smallest alloc
             else if(size < largest_alloc){
