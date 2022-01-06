@@ -165,6 +165,13 @@ void mem_init(unsigned char *my_memory, unsigned int my_mem_size){
 
 //a function functionally equivalent to malloc() , but allocates it from the memory pool passed to mem_init() 
 void *my_malloc(unsigned size){
+
+    // validate size
+    if(size <= 0){
+        printf("invalid size input, size must be > 0, allocation failed");
+        return NULL;
+    }
+
     // first try and find a free block within the linked list
     Block *b = head;
 
@@ -250,7 +257,9 @@ void my_free(void *mem_pointer){
 
     // get mem_pointer's offset from the beginning
     // of our entire memory block
-    int offset = (void *)MEMORY - mem_pointer;
+    Block *b = (Block*)mem_pointer;
+    int loc_target = b->size;
+    
 
     // go through ll starting with head to find the pointer
     Block *target = head;
@@ -259,7 +268,7 @@ void my_free(void *mem_pointer){
     // until we reach the tail ('t')
     while(target->status != 't'){
         // if we found our target memory location, break
-        if(target->loc == offset){
+        if(target->loc == loc_target){
             break;
         }
         // otherwise continue the search
