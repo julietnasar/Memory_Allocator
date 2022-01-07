@@ -66,7 +66,7 @@ Block *createBlock(unsigned int size, unsigned int loc, char status, Block *prev
     newBlock = (Block *)malloc(sizeof(Block));
 
     newBlock->size = size;
-    newBlock->loc;
+    newBlock->loc = loc;
     newBlock->status = status;
     newBlock->prev = prev;
     newBlock->next = next;
@@ -80,7 +80,6 @@ void insertBehind(Block *newBlock, Block *oldBlock){
 
     // adjust oldBlock loc & size
     oldBlock->size = oldBlock->size - newBlock->size;   // new size is old size - size of new block
-    newBlock->loc=oldBlock->loc;
     oldBlock->loc= oldBlock->loc + newBlock->size;      // new loc is old loc + size of new block
 
 
@@ -200,7 +199,7 @@ Block *leftmostFree(Block *b){
 Block *rightmostFree(Block *b){
     Block *cur = b;
     // go right until reach head or hit non free block
-    while(cur != tail && cur->next->status == 'f'){
+    while(cur->next != tail && cur->next->status == 'f'){
         cur = cur->next;
     }
     // return rightmost free
@@ -375,7 +374,6 @@ void print_stats(char *prefix) {
 	    mem_stats->smallest_block_used,
 	    mem_stats->largest_block_used);
 } 
-
 
 
 
