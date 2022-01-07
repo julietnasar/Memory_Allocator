@@ -2,10 +2,6 @@
 # include <stdlib.h>
 # include <string.h>
 
-
-
-
-
 unsigned char *MEMORY;
 unsigned int MAX_SIZE;
 
@@ -22,7 +18,6 @@ struct blockType {
 // head of the linked list & the current node must be global
 Block *head;
 Block *tail;
-
 
 // prints the linked list from head -> tail
 void printLL(){
@@ -46,6 +41,20 @@ void printBlock(Block *b){
         b->status);
         b = b->next;
     }
+}
+
+// returns 1 if target currently in linked list,
+// returns 0 otherwise
+int inList(Block *target){
+    Block *b = head;
+    while(b != tail){
+
+        if(b == target){
+            return 1;
+        }
+        b = b->next;
+    }
+    return 0;
 }
 
 // function to create a Block
@@ -119,7 +128,6 @@ void mem_init(unsigned char *my_memory, unsigned int my_mem_size){
     
     head->next = tail;
     tail->prev = head;
-
 }
 
 
@@ -128,8 +136,8 @@ void mem_init(unsigned char *my_memory, unsigned int my_mem_size){
 void *my_malloc(unsigned size){
 
     // validate size
-    if(size <= 0){
-        printf("invalid size input, size must be > 0, allocation failed");
+    if(size <= 0 || size > MAX_SIZE){
+        printf("invalid size input, size must be > 0 and < the maximum memory capacity: %d, allocation failed", MAX_SIZE);
         return NULL;
     }
 
@@ -141,11 +149,6 @@ void *my_malloc(unsigned size){
 
     // if status is t we reached tail
     while(b->status != 't'){
-        
-        /*printf("[location: %d, size: %d, status: %c] -->",
-        b->loc,
-        b->size,
-        b->status);*/
 
         // if we found a free block that is a fit size-wise    
         if(b->status == 'f' && b->size >= size){
@@ -168,24 +171,17 @@ void *my_malloc(unsigned size){
                 // insert newBlock behind b
                 // b.prev --> newBlock --> b
                 insertBehind(newBlock, b);
-                
 
                 // we allocated so we can return
-                return newBlock;
-                
+                return newBlock; 
             }
-            
-            
         }
         // keep looking for a suitable empty block
         b = b->next;
-        
     }
-
     
     printf("OUT OF BOUNDS, no more space to allocate, allocation unsuccessful");
     return NULL;
-
 }
 
 // returns leftmost contiguously free block
@@ -222,12 +218,12 @@ void merge(Block *a, Block *b){
     // skip over middle
     a->next = b->next;
     b->next->prev = a;
-    
 }
 
 
 
 // a function equivalent to free() , but returns the memory to the pool passed to mem_init()
+// returns the freed block if found, NULL otherwise
 void my_free(void *mem_pointer){
 
     // get mem_pointer's offset from the beginning
@@ -285,6 +281,7 @@ void my_free(void *mem_pointer){
     else{
         merge(target, right);
     }
+
 
 }
 
@@ -379,6 +376,115 @@ void print_stats(char *prefix) {
 } 
 
 
+/*    TEST FUNCTIONS     */
+
+void printpass(char testName[]){
+    printf("\n------------------------------ TEST %s PASSED ------------------------------\n", testName);
+}
+
+void printfail(char testName[]){
+    printf("\n------------------------------ TEST %s FAILED ------------------------------\n", testName);
+}
+
+// test: what happens when the memory is overloaded
+// conditional: should return null
+void test_overload(unsigned int global_memory, unsigned char *global_mem_size, char name[]){
+
+    mem_init(global_memory, global_mem_size);
+    Block *res = my_malloc(global_mem_size+1);
+    
+    if(res == NULL){
+        printpass(name);
+    }
+    else{
+        printfail(name);
+    }
+}
+
+// test: when memory is allocated it appears in the linked list
+// conditional: every block returned by malloc is in the linked list
+void test_alloc(unsigned int global_memory, unsigned char *global_mem_size, char name[]){
+
+    mem_init(global_memory, global_mem_size);
+    unsigned int sizes[] = {50, 20, 20, 20, 50, 0};
+    Block *arr[4];
+
+    for (int i = 0; sizes[i] != 0; i++)
+    {
+        char buf[1024];
+        arr[i] = my_malloc(sizes[i]);
+    }
+
+    for (int i = 0; sizes[i] != 0; i++)
+    {
+        if(inList(arr[i]) == 0){
+            printfail(name);
+            return;
+        }
+    }
+    printpass(name);
+}
+
+
+// test: when memory is freed it is marked as free
+// free a block and see if it is marked that way 'f'
+void test_free(unsigned int global_memory, unsigned char *global_mem_size, char name[]){
+
+    mem_init(global_memory, global_mem_size);
+    unsigned int sizes[] = {50, 20, 20, 20, 50, 0};
+    Block *arr[4];
+    for (int i = 0; sizes[i] != 0; i++)
+    {
+        char buf[1024];
+        arr[i] = my_malloc(sizes[i]);
+    }
+    // free a space
+    my_free(arr[2]);
+
+    if(arr[2]->status == 'f'){
+        printpass(name);
+    }
+    else{
+        printfail(name);
+    }
+}
+
+// test: when two adjacent memory locations are freed, they get merged
+// free two adjacent blocks and check if merged
+void test_merge(unsigned int global_memory, unsigned char *global_mem_size, char name[]){
+
+    mem_init(global_memory, global_mem_size);
+    unsigned int sizes[] = {20, 20, 20, 20, 20, 0};
+    Block *arr[10];
+
+    for (int i = 0; sizes[i] != 0; i++)
+    {
+        char buf[1024];
+        arr[i] = my_malloc(sizes[i]);
+    }
+
+    // now we will free up spaces 2 & 3
+    int totSize = arr[2]->size + arr[3]->size;
+
+    // free adjacent spaces
+    my_free(arr[2]);
+    my_free(arr[3]);
+
+    if(arr[2]->size == totSize){
+        printpass(name);
+    }
+    else{
+        printfail(name);
+    }
+}
+
+void runTests(unsigned int global_memory, unsigned char *global_mem_size){
+
+    test_overload(global_memory, global_mem_size, "OVERLOAD\0");
+    test_alloc(global_memory, global_mem_size, "ALLOC\0");
+    test_free(global_memory, global_mem_size, "FREE\0");
+    test_merge(global_memory, global_mem_size, "MERGE\0");
+}
 
 int main(int argc, char **argv)
 {
@@ -387,7 +493,7 @@ int main(int argc, char **argv)
     unsigned char *global_memory = malloc(global_mem_size);
 
     mem_init(global_memory, global_mem_size);
-    
+
     print_stats("init");
 
     
@@ -423,6 +529,14 @@ int main(int argc, char **argv)
     my_free(ptr_array[4]);
     print_stats("after free #4"); 
     printLL();
+
+    printf("\n\n------------------------------ TESTING ------------------------------\n\n");
+    runTests(global_memory, global_mem_size);
     
-} 
+}
+
+
+
+
+
 
