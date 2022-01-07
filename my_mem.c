@@ -64,8 +64,10 @@ Block *createBlock(unsigned int size, unsigned int loc, char status, Block *prev
     
     Block *newBlock;
 
+    // allocate size
     newBlock = (Block *)malloc(sizeof(Block));
 
+    // set values
     newBlock->size = size;
     newBlock->loc = loc;
     newBlock->status = status;
@@ -86,10 +88,10 @@ void insertBehind(Block *newBlock, Block *oldBlock){
 
     // if at head
     if(oldBlock->prev == NULL){
-
+        // put newBlock behind oldBlock
         oldBlock->prev = newBlock;
         newBlock->next = oldBlock;
-
+        // set head to newBlock
         head = newBlock;
         return;
     }
@@ -112,8 +114,6 @@ void mem_init(unsigned char *my_memory, unsigned int my_mem_size){
     // assign global vars
     MEMORY = my_memory;
     MAX_SIZE = my_mem_size;
-
-    //printf("%u\n%u\n", mem_lower_bound, mem_upper_bound);
 
     // initialize head block
     unsigned int size = my_mem_size;
