@@ -23,6 +23,7 @@ Block *tail;
 // prints the linked list from head -> tail
 void printLL(){
 
+    printf("\n");
     Block *b = head;
     while(b->status != 't'){
         printf("[location: %d, size: %d, status: %c] -->",
@@ -31,7 +32,7 @@ void printLL(){
         b->status);
         b = b->next;
     }
-    printf(" TAIL\n");
+    printf(" TAIL\n\n");
 }
 
 void printBlock(Block *b){
