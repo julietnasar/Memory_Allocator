@@ -75,6 +75,9 @@ To add on to that, the linked list nodes contain 3 primary data type variables a
 
 I acknowledge these limitations and chose this method due to its simplicy. 
 
+## Code Presentation
+[Click here to see presentation](https://yeshiva-university.zoom.us/rec/play/lkHLrg7RMzvNS_2JwvB_u8hEi1DOIyWoCzCDov8IWEcj4OCsyt_VQ0qRkqaZ49UjlHaz3Kqj8GGvDHfa.-7pQ2b-cHpmmjb8y?continueMode=true&_x_zm_rtaid=BdUnQ-SbRhCAt-xQz66jGQ.1643817697877.bfe5e1eb9376be33e34b621f8edf08dd&_x_zm_rhtaid=466)
+
 ## Example Code
 ```c
 unsigned int global_mem_size = 1024 * 1024;
