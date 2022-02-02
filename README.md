@@ -33,6 +33,7 @@ When the memory is first initilaized, the head and tail of the linked list are d
 ```
 
 The beauty of the double nature of the doubly linked list comes when traversal is neccesary. A problem that plagues memory allocators is freeing up consecutive free space blocks. 
+
 For example lets say you have this memory structure:
 alloc -> alloc -> alloc
 you free the first block
@@ -66,6 +67,13 @@ I implemented this by checking the leftmost and rightmost free Blocks on either 
         merge(target, right);
     }
 ```
+
+## Limitations
+Although the doubly linked list does substantially beautify and simplify the process of traversal, freeing, and allocating, it takes up much more space than the conventional array or even a singly linked list.
+
+To add on to that, the linked list nodes contain 3 primary data type variables and two Blocks. 
+
+I acknowledge these limitations and chose this method due to its simplicy. 
 
 ## Example Code
 ```c
