@@ -1,7 +1,7 @@
-## Memory_Allocator
-# Goal
+# Memory_Allocator
+## Goal
 *provide a functional implementation of a memory allocator*
-# Implementation
+## Implementation
 
 To implement the memory allocator, I used a doubly linked list as my underlying data structure made up of Block structures.
 
@@ -67,8 +67,101 @@ I implemented this by checking the leftmost and rightmost free Blocks on either 
     }
 ```
 
+## Example Code
+```c
+unsigned int global_mem_size = 1024 * 1024;
+    unsigned char *global_memory = malloc(global_mem_size);
 
-# Functions Supported
+    mem_init(global_memory, global_mem_size);
+
+    print_stats("init");
+
+    
+    unsigned char *ptr_array[10];
+    unsigned int sizes[] = {50, 20, 20, 20, 50, 0};
+
+    printLL();
+
+    for (int i = 0; sizes[i] != 0; i++)
+    {
+        char buf[1024];
+        ptr_array[i] = my_malloc(sizes[i]);
+
+        sprintf(buf, "after iteration %d size %d", i, sizes[i]);
+        print_stats(buf);
+        printLL();
+    }
+
+    my_free(ptr_array[1]);
+    print_stats("after free #1");
+    printLL();
+
+    my_free(ptr_array[3]);
+    print_stats("after free #3");
+    printLL();
+
+    my_free(ptr_array[2]);
+    print_stats("after free #2");
+    printLL();
+
+    my_free(ptr_array[0]);
+    print_stats("after free #0");
+    printLL();
+
+    my_free(ptr_array[4]);
+    print_stats("after free #4"); 
+    printLL();
+```
+
+Output:
+
+```
+mem stats: init: 1 free blocks, 0 used blocks, free blocks: smallest=0 largest=1048576, used blocks: smallest=0 largest=0
+
+[location: 0, size: 1048576, status: f] --> TAIL
+
+mem stats: after iteration 0 size 50: 1 free blocks, 1 used blocks, free blocks: smallest=0 largest=1048526, used blocks: smallest=0 largest=50
+
+[location: 0, size: 50, status: a] -->[location: 50, size: 1048526, status: f] --> TAIL
+
+mem stats: after iteration 1 size 20: 1 free blocks, 2 used blocks, free blocks: smallest=0 largest=1048506, used blocks: smallest=20 largest=50
+
+[location: 0, size: 50, status: a] -->[location: 50, size: 20, status: a] -->[location: 70, size: 1048506, status: f] --> TAIL
+
+mem stats: after iteration 2 size 20: 1 free blocks, 3 used blocks, free blocks: smallest=0 largest=1048486, used blocks: smallest=20 largest=50
+
+[location: 0, size: 50, status: a] -->[location: 50, size: 20, status: a] -->[location: 70, size: 20, status: a] -->[location: 90, size: 1048486, status: f] --> TAIL
+
+mem stats: after iteration 3 size 20: 1 free blocks, 4 used blocks, free blocks: smallest=0 largest=1048466, used blocks: smallest=20 largest=50
+
+[location: 0, size: 50, status: a] -->[location: 50, size: 20, status: a] -->[location: 70, size: 20, status: a] -->[location: 90, size: 20, status: a] -->[location: 110, size: 1048466, status: f] --> TAIL
+
+mem stats: after iteration 4 size 50: 1 free blocks, 5 used blocks, free blocks: smallest=0 largest=1048416, used blocks: smallest=20 largest=50
+
+[location: 0, size: 50, status: a] -->[location: 50, size: 20, status: a] -->[location: 70, size: 20, status: a] -->[location: 90, size: 20, status: a] -->[location: 110, size: 50, status: a] -->[location: 160, size: 1048416, status: f] --> TAIL
+
+mem stats: after free #1: 2 free blocks, 4 used blocks, free blocks: smallest=0 largest=1048416, used blocks: smallest=20 largest=50
+
+[location: 0, size: 50, status: a] -->[location: 50, size: 20, status: f] -->[location: 70, size: 20, status: a] -->[location: 90, size: 20, status: a] -->[location: 110, size: 50, status: a] -->[location: 160, size: 1048416, status: f] --> TAIL
+
+mem stats: after free #3: 3 free blocks, 3 used blocks, free blocks: smallest=0 largest=1048416, used blocks: smallest=20 largest=50
+
+[location: 0, size: 50, status: a] -->[location: 50, size: 20, status: f] -->[location: 70, size: 20, status: a] -->[location: 90, size: 20, status: f] -->[location: 110, size: 50, status: a] -->[location: 160, size: 1048416, status: f] --> TAIL
+
+mem stats: after free #2: 2 free blocks, 2 used blocks, free blocks: smallest=0 largest=1048416, used blocks: smallest=0 largest=50
+
+[location: 0, size: 50, status: a] -->[location: 50, size: 60, status: f] -->[location: 110, size: 50, status: a] -->[location: 160, size: 1048416, status: f] --> TAIL
+
+mem stats: after free #0: 2 free blocks, 1 used blocks, free blocks: smallest=0 largest=1048416, used blocks: smallest=0 largest=50
+
+[location: 0, size: 100, status: f] -->[location: 110, size: 50, status: a] -->[location: 160, size: 1048416, status: f] --> TAIL
+
+mem stats: after free #4: 1 free blocks, 0 used blocks, free blocks: smallest=0 largest=260, used blocks: smallest=0 largest=0
+
+[location: 0, size: 260, status: f] --> TAIL
+```
+
+## Functions Supported
 - ```void mem_init(unsigned char *my_memory, unsigned int my_mem_size)``` : this routine is guaranteed to be called before any of the other routines, and can do whatever initialization is needed.  The memory to be managed is passed into this routine.
 - ```void *my_malloc(unsigned size)``` : a function functionally equivalent to malloc() , but allocates it from the memory pool passed to mem_init().
 - ```void my_free(void *mem_pointer)``` : a function equivalent to free() , but returns the memory to the pool passed to mem_init().
