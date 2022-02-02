@@ -1,5 +1,6 @@
 ## Memory_Allocator
-# Goal: provide a functional implementation of a memory allocator
+# Goal
+*provide a functional implementation of a memory allocator*
 # Implementation
 
 To implement the memory allocator, I used a doubly linked list as my underlying data structure made up of Block structures.
